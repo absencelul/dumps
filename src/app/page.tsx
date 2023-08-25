@@ -1,16 +1,35 @@
-interface GameEngine {
-  name: string;
-  description: string;
+import Link from "next/link";
+import Image from "next/image";
+import path from "path";
+import { promises as fs } from "fs";
+
+interface Game {
+  id: string;
+  title: string;
+  platform: string;
+  file: string;
 }
 
-const GameEngineSection: React.FC<GameEngine> = ({ name, description }) => (
+interface GameEngine {
+  id: string;
+  name: string;
+  description: string;
+  games: Game[];
+}
+
+const GameEngineSection: React.FC<GameEngine> = ({
+  id,
+  name,
+  description,
+  games,
+}) => (
   <section
-    id={name.replace(/\s+/g, "-").toLowerCase()}
+    id={id}
     className="divide-y divide-gray-200 dark:divide-gray-600 scroll-mt-[6.25rem]"
   >
     <div className="pb-6 sm:flex sm:items-center sm:justify-between sm:flex-wrap">
       <h2
-        id={`${name}-heading`}
+        id={`${id}-heading`}
         className="text-2xl font-extrabold text-gray-900 dark:text-white"
       >
         {name}
@@ -20,12 +39,34 @@ const GameEngineSection: React.FC<GameEngine> = ({ name, description }) => (
       </p>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 py-8 gap-x-8 gap-y-6">
-      <div className="space-y-4">
-        game 1
-      </div>
-      <div className="space-y-4">
-        game 2
-      </div>
+      {games.map((game) => (
+        <>
+          <Link
+            href={`/${id}/${game.id}`}
+            className="transition-all group relative bg-white hover:scale-105 dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden ring-1 ring-black ring-opacity-5"
+          >
+            <div className="relative bg-gray-100 dark:bg-gray-900 pt-[50%]">
+              <div className="absolute inset-0 w-full h-full rounded-t-lg">
+                <Image
+                  src={`/images/${game.file}`}
+                  alt={`${game.title}`}
+                  className="absolute inset-0 w-full h-full"
+                  width={100}
+                  height={100}
+                />
+              </div>
+            </div>
+            <div className="py-3 px-4">
+              <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                {game.title}
+              </p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                Platform: {game.platform}
+              </p>
+            </div>
+          </Link>
+        </>
+      ))}
     </div>
   </section>
 );
@@ -48,25 +89,15 @@ const LinkButton: React.FC<LinkButtonProps> = ({
   </a>
 );
 
-const GAME_ENGINES: GameEngine[] = [
-  {
-    name: "Unreal Engine 3",
-    description:
-      "All Unreal Engine 3 games have their classes, structures, enums and offsets dumped.",
-  },
-  {
-    name: "Unreal Engine 4",
-    description:
-      "All Unreal Engine 4 games have their classes, structures, enums and offsets dumped.",
-  },
-  {
-    name: "Unreal Engine 5",
-    description:
-      "All Unreal Engine 5 games have their classes, structures, enums and offsets dumped.",
-  },
-];
+async function getGameEngines(): Promise<GameEngine[]> {
+  const jsonPath = path.join(process.cwd(), "data", "engines.json");
+  const json = await fs.readFile(jsonPath, "utf-8");
+  return JSON.parse(json);
+}
 
-export default function Home() {
+export default async function Home() {
+  const gameEngines = await getGameEngines();
+
   return (
     <>
       <div className="overflow-hidden bg-gray-800 text-gray-300">
@@ -112,7 +143,7 @@ export default function Home() {
         className="sticky top-0 z-40 bg-white dark:bg-gray-800 text-sm font-medium text-gray-900 dark:text-white py-5 shadow-sm dark:border-t dark:border-gray-700"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-5 sm:space-x-10 lg:space-x-14">
-          {GAME_ENGINES.map((gameEngine) => (
+          {gameEngines.map((gameEngine) => (
             <LinkButton
               key={gameEngine.name}
               href={`#${gameEngine.name.replace(/\s+/g, "-").toLowerCase()}`}
@@ -124,7 +155,7 @@ export default function Home() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 space-y-8">
-        {GAME_ENGINES.map((gameEngine) => (
+        {gameEngines.map((gameEngine) => (
           <GameEngineSection key={gameEngine.name} {...gameEngine} />
         ))}
       </div>
